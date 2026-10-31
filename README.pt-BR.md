@@ -24,20 +24,9 @@ A temporização do IOP e as respostas antecipadas de abertura ainda são aproxi
 
 ## Caminho até uma versão jogável
 
-```mermaid
-flowchart LR
-    A["01 · Disco verificado<br/>FEITO"] --> B["02 · Inicialização nativa<br/>PARCIAL"]
-    B --> C["03 · Menu visível<br/>PRÓXIMO"]
-    C --> D["04 · Entrada + áudio sincronizado<br/>PENDENTE"]
-    D --> E["05 · Música completa + resultado<br/>JOGÁVEL"]
-    classDef done fill:#165a4c,stroke:#50d4a7,color:#fff;
-    classDef partial fill:#7d5318,stroke:#f2ba57,color:#fff;
-    classDef next fill:#244c7c,stroke:#74b7ff,color:#fff;
-    classDef pending fill:#303743,stroke:#778293,color:#fff;
-    class A done; class B partial; class C next; class D,E pending;
-```
+![Gráfico com cinco etapas até uma música jogável: estimativa geral de 15%, faixa de incerteza de 10–20%; disco verificado, inicialização parcial e tela, ritmo e música completa pendentes.](docs/images/road-to-playable.pt-BR.svg)
 
-O gráfico acompanha marcos observáveis, sem inventar uma porcentagem de conclusão. [ROADMAP.md](ROADMAP.md) define os critérios de cada marco.
+**15% é uma estimativa técnica subjetiva**, com faixa plausível de 10–20%. Ela considera a identificação do disco e a inicialização nativa parcial; ainda não foram demonstrados imagem, menu, áudio sincronizado, entrada ou uma música completa. Não mede cobertura de código nem prevê uma data de entrega. [ROADMAP.md](ROADMAP.md) define os testes de cada marco.
 
 ## Estrutura e compilação
 
@@ -46,3 +35,9 @@ O gráfico acompanha marcos observáveis, sem inventar uma porcentagem de conclu
 Este é um **protótipo para desenvolvedores em Windows x64**. Requer Visual Studio 2022 com C++, CMake, Git, Python 3 e uma ISO local da edição indicada. Siga o [guia de compilação](gh3-port/docs/BUILD.md). Ainda não foi validada uma compilação completa de um clone limpo.
 
 Mantido por [Iago Gomes](https://github.com/omesis-sec), que já publicou [testes e documentação de port em Intel UHD](https://github.com/omesis-sec/cybersecurity-portfolio/blob/main/docs/spartanport-validation.md). O [projeto de descompilação de GH3](https://github.com/Ketbome/gh3-decomp) fornece o mapa de funções usado localmente; seu código e os dados do jogo não são redistribuídos aqui. Contribuições devem trazer observações reproduzíveis, sem arquivos do jogo ou caminhos pessoais.
+
+## Aviso legal
+
+Este é um projeto independente e não oficial de preservação e interoperabilidade. Nem o projeto nem seu mantenedor são afiliados, patrocinados, endossados ou representam qualquer desenvolvedora, editora, fabricante de plataforma ou outro titular de direitos, incluindo Activision, Neversoft, Budcat Creations, RedOctane e Sony Interactive Entertainment. Títulos, nomes de empresas e marcas são usados apenas para identificar o jogo e pertencem a seus respectivos titulares.
+
+Este repositório não fornece, hospeda ou distribui o jogo, sua imagem de disco, executável, músicas, vídeos, texturas ou outros dados proprietários. Para usar o projeto, você precisa possuir uma cópia original adquirida legalmente da edição de PlayStation 2 compatível e preparar seus próprios arquivos locais conforme a legislação aplicável. O mantenedor não fornece cópias do jogo nem auxilia na obtenção de cópias não autorizadas. O código e a documentação destinam-se a pesquisa e desenvolvimento; atualmente não há versão jogável disponível.

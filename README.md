@@ -24,20 +24,9 @@ IOP timing and early file callbacks are currently approximations. Graphics, audi
 
 ## Road to playable
 
-```mermaid
-flowchart LR
-    A["01 · Disc verified<br/>DONE"] --> B["02 · Native startup<br/>PARTIAL"]
-    B --> C["03 · Visible menu<br/>NEXT"]
-    C --> D["04 · Input + synced audio<br/>PENDING"]
-    D --> E["05 · Full song + results<br/>PLAYABLE"]
-    classDef done fill:#165a4c,stroke:#50d4a7,color:#fff;
-    classDef partial fill:#7d5318,stroke:#f2ba57,color:#fff;
-    classDef next fill:#244c7c,stroke:#74b7ff,color:#fff;
-    classDef pending fill:#303743,stroke:#778293,color:#fff;
-    class A done; class B partial; class C next; class D,E pending;
-```
+![A five-stage roadmap to a first playable song, with an estimated 15% overall progress and a 10–20% uncertainty range. Disc verification is done, startup is partial, and menu, rhythm input, audio and a full song remain open.](docs/images/road-to-playable.en.svg)
 
-The graphic tracks observable milestones rather than an invented completion percentage. [ROADMAP.md](ROADMAP.md) defines their exit criteria.
+**15% is a subjective engineering estimate**, with a plausible 10–20% range. It is based on verified disc identification and partial native startup; rendering, menu navigation, synchronized audio, input and a complete song have not been demonstrated. It is not a code-coverage measurement or delivery forecast. [ROADMAP.md](ROADMAP.md) defines the test required for each milestone.
 
 ## Source layout and build
 
@@ -46,3 +35,9 @@ The graphic tracks observable milestones rather than an invented completion perc
 This is a **Windows x64 developer prototype** requiring Visual Studio 2022 C++ tools, CMake, Git, Python 3 and a local ISO of the specified release. Follow the [build guide](gh3-port/docs/BUILD.md). A complete clean-clone build has not yet been verified.
 
 Maintained by [Iago Gomes](https://github.com/omesis-sec), who previously published [Intel UHD port testing and documentation](https://github.com/omesis-sec/cybersecurity-portfolio/blob/main/docs/spartanport-validation.md). The [GH3 decompilation project](https://github.com/Ketbome/gh3-decomp) supplies the locally used function map; its source and game data are not redistributed here. Contributions should include reproducible observations and avoid uploading game files or personal paths.
+
+## Legal notice
+
+This is an independent, unofficial preservation and interoperability project. Neither the project nor its maintainer is affiliated with, sponsored by, endorsed by, or acting on behalf of any game developer, publisher, platform company or other rights holder, including Activision, Neversoft, Budcat Creations, RedOctane and Sony Interactive Entertainment. Game titles, company names and trademarks are used only to identify the game and belong to their respective owners.
+
+This repository does not provide, host or distribute the game, a disc image, its executable, music, videos, textures or other proprietary game data. To use the project, you must supply a lawfully obtained original copy of the supported PlayStation 2 release and prepare your own local game files in accordance with applicable law. The maintainer does not supply game copies or assist in obtaining unauthorized copies. The code and documentation are provided for research and development; no playable release is currently offered.

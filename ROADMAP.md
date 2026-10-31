@@ -2,6 +2,8 @@
 
 Progress is measured by reproducible behavior, not by the number of translated functions. A generated executable is not itself a playable port.
 
+The README visual shows a **subjective 15% estimate toward the first playable build** (plausible range: 10–20%). This reflects a verified disc and partial startup, while visible menus, synchronized audio, input and a complete song remain unverified. It is neither code coverage nor a schedule; revise it when a milestone is demonstrated.
+
 | Milestone | State | Completion test |
 | --- | --- | --- |
 | Supported disc identified | Done | SLUS-21672 ELF hash matches the known build. |
