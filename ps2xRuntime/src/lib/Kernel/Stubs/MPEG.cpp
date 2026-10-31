@@ -18,6 +18,8 @@ extern "C"
 
 #include <deque>
 #include <memory>
+#include <atomic>
+#include <cstdlib>
 
 #include "Syscalls/Helpers/State.h"
 
@@ -25,6 +27,14 @@ namespace ps2_stubs
 {
     namespace
     {
+        void gh3TraceMpeg(const char *event)
+        {
+            static const bool enabled = std::getenv("GH3_TRACE_MPEG") != nullptr;
+            static std::atomic<unsigned> count{0};
+            if (enabled && count.fetch_add(1, std::memory_order_relaxed) < 64u)
+                std::cerr << "[GH3 MPEG] " << event << std::endl;
+        }
+
         struct MpegDecodedFrame
         {
             int width = 0;
@@ -1786,6 +1796,7 @@ namespace ps2_stubs
 
     void notifyMpegCdStreamStart(PS2Runtime *runtime)
     {
+        gh3TraceMpeg("cd-stream-start");
         (void)runtime;
         std::lock_guard<std::mutex> lock(g_mpeg_stub_mutex);
         ++g_mpeg_stub_state.cdStreamGeneration;
@@ -1985,6 +1996,7 @@ namespace ps2_stubs
 
     void sceMpegCreate(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
     {
+        gh3TraceMpeg("create");
         const uint32_t param_1 = getRegU32(ctx, 4); // a0
         const uint32_t param_2 = getRegU32(ctx, 5); // a1
         const uint32_t param_3 = getRegU32(ctx, 6); // a2
@@ -2282,6 +2294,7 @@ namespace ps2_stubs
 
     void sceMpegGetPicture(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
     {
+        gh3TraceMpeg("get-picture");
         const uint32_t mpegAddr = getRegU32(ctx, 4);
         const uint32_t imageAddr = getRegU32(ctx, 5);
         uint32_t width = kStubMovieWidth;
@@ -2430,6 +2443,7 @@ namespace ps2_stubs
 
     void sceMpegInit(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
     {
+        gh3TraceMpeg("init");
         (void)rdram;
         std::lock_guard<std::mutex> lock(g_mpeg_stub_mutex);
         const uint64_t cdStreamGeneration = g_mpeg_stub_state.cdStreamGeneration;

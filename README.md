@@ -17,6 +17,7 @@ This fork uses [PS2Recomp](https://github.com/ran-j/PS2Recomp) to translate the 
 | Disc | Local `SLUS_216.72` executable matched the expected SHA-1. |
 | Translation | Hybrid map generated 9,822 entries, including 84 runtime stubs. |
 | Startup | Debug build loaded IOP modules and read game archives and scripts. |
+| Build | A local Release runner was observed for 55 seconds; no menu or song is confirmed. |
 | Memory | IOP allocator test passed 50,000 allocate/free cycles. |
 | Display | Last observed 55-second launch remained active, with a black window. No menu or song confirmed. |
 

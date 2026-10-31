@@ -17,6 +17,7 @@ Este fork utiliza [PS2Recomp](https://github.com/ran-j/PS2Recomp) para traducir 
 | Disco | El ejecutable local `SLUS_216.72` coincidió con el SHA-1 esperado. |
 | Traducción | El mapa híbrido generó 9822 entradas, incluidos 84 stubs del runtime. |
 | Inicio | La compilación Debug cargó módulos IOP, archivos y scripts del juego. |
+| Compilación | Se observó un ejecutable Release local durante 55 segundos; no hay menú ni canción confirmados. |
 | Memoria | La prueba del asignador IOP superó 50 000 ciclos de asignación/liberación. |
 | Pantalla | La última ejecución observada duró 55 segundos con la ventana negra. No hay menú ni canción confirmados. |
 
