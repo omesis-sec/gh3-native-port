@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cstring>
 #include <cstdio>
+#include <cstdlib>
 #include <limits>
 #include <stdexcept>
 
@@ -363,9 +364,23 @@ bool EeScheduler::checkpointDue(uint32_t cycles) noexcept
     {
         const R5900Context *ctx = currentContext();
         if (ctx)
+        {
             std::fprintf(stderr, "[GH3 scheduler] pc=%08x ra=%08x sp=%08x cycle=%llu\n",
                          ctx->pc, getRegU32(ctx, 31), getRegU32(ctx, 29),
                          static_cast<unsigned long long>(m_eeCycle));
+            // Optional, bounded register samples for guest script activity.
+            static const bool traceScripts = std::getenv("GH3_TRACE_SCRIPT_SAMPLES") != nullptr;
+            static thread_local unsigned scriptSamples = 0;
+            if (traceScripts && m_vsyncTick >= 300u && scriptSamples < 512u &&
+                ctx->pc >= 0x00277000u && ctx->pc < 0x00293000u)
+            {
+                ++scriptSamples;
+                std::fprintf(stderr, "[GH3 script-sample] tick=%llu pc=%08x ra=%08x a0=%08x a1=%08x s0=%08x s1=%08x s2=%08x\n",
+                             static_cast<unsigned long long>(m_vsyncTick), ctx->pc,
+                             getRegU32(ctx, 31), getRegU32(ctx, 4), getRegU32(ctx, 5),
+                             getRegU32(ctx, 16), getRegU32(ctx, 17), getRegU32(ctx, 18));
+            }
+        }
         // Sample on the guest thread alongside the PC to correlate boot progress
         // with graphics traffic without enabling verbose instruction logging.
         const auto &memory = m_runtime.memory();

@@ -76,6 +76,8 @@ python scripts/run_diagnostic.py --build hybrid --config Release --seconds 55 --
 
 The wrapper accepts 1–300 seconds and overwrites the selected log under `local/`. It prints the child exit code but **does not propagate child failure as its own exit status**. Inspect the printed result and log. Timeout is not a passing startup test. Record configuration, source revision/pending changes, relevant trace environment variables and virtual progression alongside wall time. Compilation and a bounded run do not establish playability.
 
+For the optional script register sampling, set `$env:GH3_TRACE_SCRIPT_SAMPLES = '1'` before launching the wrapper and remove it with `Remove-Item Env:GH3_TRACE_SCRIPT_SAMPLES` afterward. The trace starts at virtual VSync tick 300, samples the configured PC range and stops after 512 events per guest thread; an absent event does not prove a path was never executed. Logs stay local.
+
 Choose checks for the affected behavior. Documentation-only edits do not require compiling or running the game.
 
 ## Optional video configuration

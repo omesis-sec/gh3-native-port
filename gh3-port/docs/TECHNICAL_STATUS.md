@@ -18,6 +18,8 @@ The 200,000 EE-cycle SIF timing allowance is a temporary heuristic, not a faithf
 
 ## Graphics investigation
 
+An optional bounded register trace (`GH3_TRACE_SCRIPT_SAMPLES=1`) captured 158 script-range samples between VSync ticks 302 and 1194 during a 55-second Release diagnostic. A candidate script pointer recurred; an argument sampled at `0x0028E868`, called from the script loop-comparison routine, changed from 8 to 11. This establishes changing observed inputs, not successful boot progress or an infinite loop. The trace records at most 512 samples per guest thread after tick 300; a separate 12-second run with the variable unset emitted none. Both runs ended by timeout.
+
 A subsequent 180-second Release observation reached presentation tick 3931 before timeout. After the initial blank sample, all 131 remaining presentation samples showed the same GIF counts (0,3,2), two primitive batches and 128 nonblack pixels. No instrumented MPEG events appeared. This longer observation does not prove an infinite loop or identify its cause. In the final 300 scheduler samples, PCs `0x002791E0` and `0x0027AF80` occurred 33 and 29 times; the former corresponds to a structure-cleanup routine in the decompilation reference, while the latter's semantics remain unverified.
 
 A locally instrumented Release run reached approximately 1166 virtual VSync ticks during 55 seconds. At tick 1141, monitored GIF packet counts remained 0, 3 and 2, with two primitive batches and 128 nonblack pixels. The optional MPEG trace (`GH3_TRACE_MPEG=1`) recorded no events at its instrumented entry points; it does not cover every possible video path. The diagnostic ended by timeout. The trace is limited to 64 events per process and is disabled when the variable is unset.
@@ -32,7 +34,7 @@ A reference PCSX2 fast boot of the supported disc logged opening FMV playback. T
 
 ## Next investigation
 
-1. Identify the guest functions and script state sampled during the Release run; extend the PCSX2 reference with comparable execution evidence.
+1. Correlate the sampled script object and comparison inputs with an equivalent reference execution; identify the script and its expected progression before changing runtime semantics.
 2. Trace startup scripts and outstanding file and audio operations alongside graphics submissions, then compare them with the reference.
 3. Replace provisional IOP timing with request/response synchronization and verify no callback race remains.
 4. Reach a navigable menu before testing audio, guitar controls and a full song.
