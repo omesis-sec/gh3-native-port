@@ -24,6 +24,8 @@ The earlier invalid free was traced to the game's heap overlapping runtime callb
 
 An optional bounded IOP file trace (`GH3_TRACE_IOP_FILE=sfx.wad`) recorded 28 opens and 28 closes, 63 reads and 64 seeks on the matching file during a 55-second Debug run. The observed reads advanced through the file. These observations do not prove reference behavior, but the repeated opens alone are not evidence of an infinite open loop. The trace logs at most 512 events per IOP reset and is disabled when the filter is unset.
 
+A reference PCSX2 fast boot of the supported disc logged opening FMV playback. The current native build explicitly disables FFmpeg-backed MPEG decoding; the standard `--sounds` extraction also omits movie files, though raw-disc reads can use the original ISO. It remains unverified whether the native execution reaches or waits for an FMV. The 55-second Debug observation advanced approximately 104 virtual VSync ticks; the temporary IOP timing allowance complicates time comparisons.
+
 ## Next investigation
 
 1. Establish a reference boot trace for the same disc in PCSX2, covering the first visible screen and major file requests.
