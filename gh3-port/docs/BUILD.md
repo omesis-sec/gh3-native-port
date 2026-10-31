@@ -25,4 +25,6 @@ python scripts/run_diagnostic.py --build hybrid --config Debug --seconds 55 --lo
 
 Replace `PATH_TO_YOUR_ISO`. CMake can fetch additional upstream dependencies. The diagnostic process is bounded; it terminates after the given time and writes a log under `local/`. It is a test of startup, not a way to play the game. The optional `--full` disc extraction includes songs and videos and is not required by the sequence above.
 
+FFmpeg-backed MPEG decoding defaults to off. To configure an experimental video-enabled build, add `-DPS2X_ENABLE_FFMPEG=ON` to the CMake configure command. Building that configuration can download FFmpeg through the upstream runtime; successful game video playback has not been verified. Use a separate build directory to keep the existing diagnostic configuration intact.
+
 `scripts/regenerate_hybrid.py` creates a candidate tree, updates generated C++ and reapplies instrumentation and the two game-specific memory/callback fixes. If it rejects an unexpected generated function, inspect the source and tool revisions rather than bypassing the check. The generated function map uses the separately cloned decompilation project as reference; neither that checkout nor generated game code belongs in a commit.
