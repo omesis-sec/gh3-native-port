@@ -13,4 +13,4 @@ The README visual shows a **subjective 15% estimate toward the first playable bu
 | First playable build | Pending | Complete one song, display results and return to menu without crashing. |
 | Compatibility release | Later | Test broader song/mode coverage, saves, controllers and performance on multiple PCs. |
 
-Current priorities: correlate the observed Release execution with scripts and a reference; trace whether execution reaches the opening video; replace provisional IOP timing with correct synchronization; validate memory boundaries and file requests. A 55-second Release run reached about 1166 virtual VSync ticks without new monitored graphics submissions, but does not establish a boot deadlock or playability.
+Current priorities: correlate the observed Release execution with scripts and a reference; trace whether execution reaches the opening video; replace provisional IOP timing with correct synchronization; validate memory boundaries and file requests. A 180-second Release run reached presentation tick 3931 with no later change in monitored graphics submissions; this does not establish a boot deadlock or playability.
