@@ -13,4 +13,4 @@ The README visual shows a **subjective 15% estimate toward the first playable bu
 | First playable build | Pending | Complete one song, display results and return to menu without crashing. |
 | Compatibility release | Later | Test broader song/mode coverage, saves, controllers and performance on multiple PCs. |
 
-Current priorities: determine why rendering stays black; compare the execution with a reference; replace provisional IOP timing with correct synchronization; validate memory boundaries and file requests. Avoid presenting the current 55-second run as evidence of playability.
+Current priorities: complete and observe a Release boot; trace whether execution reaches the opening video and account for disabled MPEG decoding; compare the execution with a reference; replace provisional IOP timing with correct synchronization; validate memory boundaries and file requests. The 55-second Debug run covered only about 104 virtual VSync ticks and does not establish a boot deadlock or playability.
