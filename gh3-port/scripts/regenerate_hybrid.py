@@ -49,6 +49,7 @@ def main():
     checked([sys.executable, ROOT / 'scripts/instrument_fixup.py'])
     checked([sys.executable, ROOT / 'scripts/instrument_qb_visits.py'])
     checked([sys.executable, ROOT / 'scripts/instrument_symbol.py'])
+    checked([sys.executable, ROOT / 'scripts/instrument_cursor_writes.py'])
     checked([sys.executable, ROOT / 'scripts/instrument_cursor.py'])
     checked([sys.executable, ROOT / 'scripts/instrument_resource_input.py'])
     checked([sys.executable, ROOT / 'scripts/reserve_callback_memory.py'])

@@ -19,7 +19,7 @@ Este fork utiliza [PS2Recomp](https://github.com/ran-j/PS2Recomp) para traducir 
 | Inicio | La compilación Debug cargó módulos IOP, archivos y scripts del juego. |
 | Compilación | Se observó un ejecutable Release local durante 55 segundos; no hay menú ni canción confirmados. |
 | Memoria | La prueba del asignador IOP superó 50 000 ciclos de asignación/liberación. |
-| Pantalla | La última ejecución observada duró 55 segundos con la ventana negra. No hay menú ni canción confirmados. |
+| Pantalla | Una ejecución Debug de 55 segundos mostró una ventana negra. No hay menú ni canción confirmados. |
 
 El ajuste temporal del IOP y las respuestas anticipadas de apertura son aproximaciones. Gráficos, audio, controles y sincronización siguen pendientes. Consulta las [notas técnicas](gh3-port/docs/TECHNICAL_STATUS.md).
 

@@ -76,6 +76,10 @@ python scripts/run_diagnostic.py --build hybrid --config Release --seconds 55 --
 
 The wrapper accepts 1–300 seconds and overwrites the selected log under `local/`. It prints the child exit code but **does not propagate child failure as its own exit status**. Inspect the printed result and log. Timeout is not a passing startup test. Record configuration, source revision/pending changes, relevant trace environment variables and virtual progression alongside wall time. Compilation and a bounded run do not establish playability.
 
+Optional script diagnostics are disabled unless requested. In PowerShell, set `$env:GH3_TRACE_SCRIPT_ERRORS='1'` for bounded call/cursor statistics or `$env:GH3_TRACE_SCRIPT_STATES='1'` for up to 512 checkpoint samples per host thread after tick 300. Remove the variables afterwards with `Remove-Item Env:GH3_TRACE_SCRIPT_ERRORS, Env:GH3_TRACE_SCRIPT_STATES -ErrorAction SilentlyContinue`. Counters and periodic snapshots do not establish a matching reference stage.
+
+For a selected guest object, `$env:GH3_TRACE_CURSOR_OBJECT='0xADDRESS'` enables bounded cursor-write diagnostics in the generated parser; replace the placeholder with an observed guest object address. Regeneration reapplies this instrumentation through `scripts/instrument_cursor_writes.py`. Remove the variable after use. Guest addresses are specific to an execution and must be validated before comparison.
+
 For the optional script register sampling, set `$env:GH3_TRACE_SCRIPT_SAMPLES = '1'` before launching the wrapper and remove it with `Remove-Item Env:GH3_TRACE_SCRIPT_SAMPLES` afterward. The trace starts at virtual VSync tick 300, samples the configured PC range and stops after 512 events per host thread; an absent event does not prove a path was never executed. Logs stay local.
 
 Choose checks for the affected behavior. Documentation-only edits do not require compiling or running the game.

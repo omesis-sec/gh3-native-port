@@ -19,7 +19,7 @@ Este fork usa [PS2Recomp](https://github.com/ran-j/PS2Recomp) para traduzir o ex
 | Inicialização | A build Debug carregou módulos IOP, arquivos e scripts do jogo. |
 | Compilação | Um executável Release local foi observado por 55 segundos; não há menu ou música confirmados. |
 | Memória | O teste do alocador IOP passou em 50 mil ciclos de alocação/liberação. |
-| Tela | A última execução observada durou 55 segundos, com janela preta. Não há menu ou música confirmados. |
+| Tela | Uma execução Debug de 55 segundos mostrou janela preta. Não há menu ou música confirmados. |
 
 A temporização do IOP e as respostas antecipadas de abertura ainda são aproximações. Gráficos, áudio, entrada e sincronização continuam pendentes. Consulte as [notas técnicas](gh3-port/docs/TECHNICAL_STATUS.md).
 

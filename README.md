@@ -19,7 +19,7 @@ This fork uses [PS2Recomp](https://github.com/ran-j/PS2Recomp) to translate the 
 | Startup | Debug build loaded IOP modules and read game archives and scripts. |
 | Build | A local Release runner was observed for 55 seconds; no menu or song is confirmed. |
 | Memory | IOP allocator test passed 50,000 allocate/free cycles. |
-| Display | Last observed 55-second launch remained active, with a black window. No menu or song confirmed. |
+| Display | A 55-second Debug run showed a black window. No menu or song is confirmed. |
 
 IOP timing and early file callbacks are currently approximations. Graphics, audio, input, and timing remain open engineering work. See [technical status](gh3-port/docs/TECHNICAL_STATUS.md).
 

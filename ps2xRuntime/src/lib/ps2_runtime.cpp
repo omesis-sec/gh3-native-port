@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <cstdlib>
 #include <limits>
 #include <chrono>
 #include <atomic>
@@ -1391,6 +1392,94 @@ bool PS2Runtime::dispatchGuestBranch(uint8_t *rdram,
         return false;
     }
 
+    // Opt-in aggregate sampling of script error-state calls. Do not print
+    // strings or guest memory; source and argument addresses identify sites.
+    if (isCall && targetPc == 0x0028EB18u)
+    {
+        static const bool enabled = std::getenv("GH3_TRACE_SCRIPT_ERRORS") != nullptr;
+        if (enabled)
+        {
+            static std::atomic<uint64_t> calls{0};
+            const uint64_t n = calls.fetch_add(1, std::memory_order_relaxed) + 1;
+            if (n <= 16 || ((n & (n - 1)) == 0))
+            {
+                const uint32_t object = getRegU32(ctx, 4);
+                uint32_t depth = 0xffffffffu, loopDepth = 0xffffffffu, active = 0xffffffffu;
+                uint32_t baseEntry = 0xffffffffu, slot = 0xffffffffu;
+                if (object <= PS2_RAM_SIZE - 0x1f0u)
+                {
+                    std::memcpy(&depth, rdram + object + 0x144u, sizeof(depth));
+                    std::memcpy(&loopDepth, rdram + object + 0x1e8u, sizeof(loopDepth));
+                    std::memcpy(&active, rdram + object + 0x1ecu, sizeof(active));
+                    std::memcpy(&baseEntry, rdram + object + 0x148u, sizeof(baseEntry));
+                    if (loopDepth < 20u)
+                    {
+                        std::memcpy(&slot, rdram + object + 0x14cu + loopDepth * 8u, sizeof(slot));
+                    }
+                }
+                std::fprintf(stderr, "[GH3 script-error] count=%llu tick=%llu source=%08x object=%08x code=%08x depth=%u loop=%u active=%u base_nonzero=%u slot_nonzero=%u\n",
+                             static_cast<unsigned long long>(n),
+                             static_cast<unsigned long long>(m_eeScheduler ? m_eeScheduler->currentVSyncTick() : 0),
+                             sourcePc, object, getRegU32(ctx, 5), depth, loopDepth, active,
+                             static_cast<unsigned>(baseEntry != 0), static_cast<unsigned>(slot != 0));
+            }
+        }
+    }
+    if (isCall && targetPc == 0x00290AA8u && sourcePc == 0x00287084u)
+    {
+        static const bool enabled = std::getenv("GH3_TRACE_SCRIPT_ERRORS") != nullptr;
+        if (enabled)
+        {
+            static thread_local uint64_t calls = 0, changes = 0;
+            static thread_local std::array<uint32_t, 32> cursors{};
+            static thread_local std::array<uint32_t, 16> recent{};
+            static thread_local std::array<uint32_t, 16> recentParents{};
+            static thread_local std::array<uint64_t, 4> repeated{};
+            static constexpr std::array<unsigned, 4> lags{2, 4, 8, 16};
+            static thread_local size_t used = 0;
+            static thread_local bool overflow = false;
+            static thread_local uint32_t previous = 0;
+            const uint64_t n = ++calls;
+            const uint32_t cursor = getRegU32(ctx, 18);
+            uint32_t parent = 0xffffffffu;
+            const uint32_t sp = getRegU32(ctx, 29);
+            if (sp <= PS2_RAM_SIZE - 0x70u)
+                std::memcpy(&parent, rdram + sp + 0x68u, sizeof(parent));
+            if (n > 1 && cursor != previous)
+                ++changes;
+            previous = cursor;
+            for (size_t i = 0; i < lags.size(); ++i)
+                if (n > lags[i] && recent[(n - 1 - lags[i]) % recent.size()] == cursor)
+                    ++repeated[i];
+            recent[(n - 1) % recent.size()] = cursor;
+            recentParents[(n - 1) % recentParents.size()] = parent;
+            if (std::find(cursors.begin(), cursors.begin() + used, cursor) == cursors.begin() + used)
+            {
+                if (used < cursors.size())
+                    cursors[used++] = cursor;
+                else
+                    overflow = true;
+            }
+            if (n <= 16 || ((n & (n - 1)) == 0))
+            {
+                std::fprintf(stderr, "[GH3 script-caller] count=%llu tick=%llu object=%08x arg=%08x cursor=%08x parent=%08x changes=%llu unique=%zu overflow=%u lag2=%llu lag4=%llu lag8=%llu lag16=%llu\n",
+                             static_cast<unsigned long long>(n),
+                             static_cast<unsigned long long>(m_eeScheduler ? m_eeScheduler->currentVSyncTick() : 0),
+                             getRegU32(ctx, 4), getRegU32(ctx, 5), cursor, parent,
+                             static_cast<unsigned long long>(changes), used, static_cast<unsigned>(overflow),
+                             static_cast<unsigned long long>(repeated[0]), static_cast<unsigned long long>(repeated[1]),
+                             static_cast<unsigned long long>(repeated[2]), static_cast<unsigned long long>(repeated[3]));
+            }
+            if (n == 65536u || n == 1048576u)
+            {
+                std::fprintf(stderr, "[GH3 script-cursors] count=%llu", static_cast<unsigned long long>(n));
+                for (size_t i = 0; i < recent.size(); ++i)
+                    std::fprintf(stderr, " %08x:%08x", recent[(n + i) % recent.size()], recentParents[(n + i) % recentParents.size()]);
+                std::fprintf(stderr, "\n");
+            }
+        }
+    }
+
     if (!isCall)
     {
         if (!hasFunction(targetPc))
@@ -1424,8 +1513,65 @@ bool PS2Runtime::dispatchGuestBranch(uint8_t *rdram,
         return false;
     }
 
+    static const bool traceParserReturns = std::getenv("GH3_TRACE_SCRIPT_ERRORS") != nullptr;
+    const bool traceParserCall = traceParserReturns && targetPc == 0x002870C0u;
+    const uint32_t parserInput = traceParserCall ? getRegU32(ctx, 5) : 0;
+    const uint32_t managerObject = traceParserCall && sourcePc == 0x0028AB90u ? getRegU32(ctx, 16) : 0;
     RecompiledFunction targetFn = lookupFunction(targetPc);
     targetFn(rdram, ctx, this);
+
+    // Count completed calls only; a yield is not a return and may be resumed
+    // through a different dispatch. Addresses are logged, never guest bytes.
+    if (traceParserCall && ctx->pc == fallthroughPc)
+    {
+        static thread_local uint64_t returns = 0, unchanged = 0;
+        static thread_local uint64_t managerCalls = 0, managerForward = 0, managerBackward = 0, managerSame = 0;
+        static thread_local uint64_t adjacent = 0, continued = 0, rewound = 0;
+        static thread_local uint32_t lastObject = 0, lastOutput = 0;
+        static thread_local std::array<uint32_t, 8> managerInputs{}, managerOutputs{}, managerObjects{};
+        const uint64_t n = ++returns;
+        const uint32_t output = getRegU32(ctx, 2);
+        if (output == parserInput)
+            ++unchanged;
+        if (sourcePc == 0x0028AB90u)
+        {
+            ++managerCalls;
+            if (managerCalls > 1 && managerObject == lastObject)
+            {
+                ++adjacent;
+                if (parserInput == lastOutput) ++continued;
+                else if (parserInput < lastOutput) ++rewound;
+            }
+            lastObject = managerObject;
+            lastOutput = output;
+            const size_t pos = (managerCalls - 1) % managerInputs.size();
+            managerInputs[pos] = parserInput;
+            managerOutputs[pos] = output;
+            managerObjects[pos] = managerObject;
+            if (output > parserInput) ++managerForward;
+            else if (output < parserInput) ++managerBackward;
+            else ++managerSame;
+            if (managerCalls == 65536u || managerCalls == 524288u)
+            {
+                std::fprintf(stderr, "[GH3 script-returns] count=%llu", static_cast<unsigned long long>(managerCalls));
+                for (size_t i = 0; i < managerInputs.size(); ++i)
+                {
+                    const size_t at = (managerCalls + i) % managerInputs.size();
+                    std::fprintf(stderr, " %08x:%08x:%08x", managerObjects[at], managerInputs[at], managerOutputs[at]);
+                }
+                std::fprintf(stderr, "\n");
+            }
+        }
+        if (n <= 16 || ((n & (n - 1)) == 0))
+            std::fprintf(stderr, "[GH3 script-return] count=%llu tick=%llu source=%08x in=%08x out=%08x unchanged=%llu manager=%llu forward=%llu backward=%llu same=%llu adjacent=%llu continued=%llu rewound=%llu\n",
+                         static_cast<unsigned long long>(n),
+                         static_cast<unsigned long long>(m_eeScheduler ? m_eeScheduler->currentVSyncTick() : 0),
+                         sourcePc, parserInput, output, static_cast<unsigned long long>(unchanged),
+                         static_cast<unsigned long long>(managerCalls), static_cast<unsigned long long>(managerForward),
+                         static_cast<unsigned long long>(managerBackward), static_cast<unsigned long long>(managerSame),
+                         static_cast<unsigned long long>(adjacent), static_cast<unsigned long long>(continued),
+                         static_cast<unsigned long long>(rewound));
+    }
 
     if (isStopRequested() || ctx->pc == 0u)
     {

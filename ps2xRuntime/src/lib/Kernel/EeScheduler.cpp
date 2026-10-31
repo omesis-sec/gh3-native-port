@@ -380,6 +380,23 @@ bool EeScheduler::checkpointDue(uint32_t cycles) noexcept
                              getRegU32(ctx, 31), getRegU32(ctx, 4), getRegU32(ctx, 5),
                              getRegU32(ctx, 16), getRegU32(ctx, 17), getRegU32(ctx, 18));
             }
+            // Read only numeric fields at a known game-specific global object.
+            static const bool traceState = std::getenv("GH3_TRACE_SCRIPT_STATES") != nullptr;
+            static thread_local unsigned stateSamples = 0;
+            if (traceState && m_rdram && m_vsyncTick >= 300u && stateSamples < 512u &&
+                (gh3Samples % 4000000u) == 0u)
+            {
+                ++stateSamples;
+                constexpr uint32_t base = 0x003a9ad8u;
+                uint32_t depth, loop, active, status;
+                std::memcpy(&depth, m_rdram + base + 0x144u, sizeof(depth));
+                std::memcpy(&loop, m_rdram + base + 0x1e8u, sizeof(loop));
+                std::memcpy(&active, m_rdram + base + 0x1ecu, sizeof(active));
+                std::memcpy(&status, m_rdram + base + 0x1f4u, sizeof(status));
+                std::fprintf(stderr, "[GH3 script-state] tick=%llu depth=%u loop=%u active=%u status_present=%u\n",
+                             static_cast<unsigned long long>(m_vsyncTick), depth, loop, active,
+                             static_cast<unsigned>(status != 0));
+            }
         }
         // Sample on the guest thread alongside the PC to correlate boot progress
         // with graphics traffic without enabling verbose instruction logging.
