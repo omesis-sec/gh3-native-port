@@ -16,10 +16,16 @@ The native Debug runner opens a Windows window and has loaded the required IOP m
 
 The 200,000 EE-cycle SIF timing allowance is a temporary heuristic, not a faithful hardware model. File requests and the repeated opening of `sounds/sfx.wad` need investigation. The black window may involve rendering, scheduling, missing assets or another path; no single cause has been established. A Release build was not completed, so Debug timing does not represent final performance.
 
+## Graphics investigation
+
+A 55-second Debug run collected GIF packet, CPU primitive and presentation counters. At VSync tick 31, paths 1, 2 and 3 had submitted 0, 3 and 2 packets respectively, with two nonempty CPU primitive batches. The latched 640×448 image contained 128 pixels with a nonzero RGB channel. The same values appeared at ticks 61 and 91 while the guest scheduler continued to run. The display framebuffer was 0 and the presentation fallback selected source 70. This shows that some graphics reached the CPU backend, but it does not identify why subsequent monitored submissions stopped or establish whether the fallback source was appropriate.
+
+The earlier invalid free was traced to the game's heap overlapping runtime callback stacks. Reserving the top MiB prevented the previously observed package terminator corruption; the bounded run passed both global archives and reached `Z_Soundcheck` without the former missing indirect-call target. The reserved region still needs a complete memory-layout audit.
+
 ## Next investigation
 
 1. Establish a reference boot trace for the same disc in PCSX2, covering the first visible screen and major file requests.
-2. Instrument the native renderer and frame submission to identify why no image appears, while checking whether the main game loop progresses.
+2. Trace the startup scripts and outstanding file and audio operations alongside graphics submissions, then compare them with the reference. Investigate repeated `sounds/sfx.wad` opens without assuming they cause the stalled graphics.
 3. Replace provisional IOP timing with request/response synchronization and verify no callback race remains.
 4. Reach a navigable menu before testing audio, guitar controls and a full song.
 

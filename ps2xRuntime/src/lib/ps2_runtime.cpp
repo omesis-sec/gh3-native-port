@@ -373,6 +373,9 @@ namespace
     }
 }
 
+extern std::atomic<uint64_t> gh3GifPackets[3];
+extern std::atomic<uint64_t> gh3PrimitiveBatches;
+
 static void UploadFrame(Texture2D &tex, PS2Runtime *rt, uint32_t &outWidth, uint32_t &outHeight)
 {
     static uint64_t s_lastPresentationTick = std::numeric_limits<uint64_t>::max();
@@ -449,6 +452,22 @@ static void UploadFrame(Texture2D &tex, PS2Runtime *rt, uint32_t &outWidth, uint
     s_lastPreferred = usedPreferredDisplaySource;
     s_lastWidth = width;
     s_lastHeight = height;
+
+    static uint64_t lastReport = UINT64_MAX;
+    if (lastReport == UINT64_MAX || currentTick >= lastReport + 30u)
+    {
+        lastReport = currentTick;
+        size_t nonBlack = 0;
+        for (size_t i = 0; i + 3 < s_scratch.size(); i += 4)
+            nonBlack += (s_scratch[i] | s_scratch[i + 1] | s_scratch[i + 2]) != 0;
+        std::fprintf(stderr, "[GH3 present] tick=%llu gif=%llu,%llu,%llu primitives=%llu size=%ux%u nonblack=%zu display=%u source=%u preferred=%u\n",
+                     static_cast<unsigned long long>(currentTick),
+                     static_cast<unsigned long long>(gh3GifPackets[0].load(std::memory_order_relaxed)),
+                     static_cast<unsigned long long>(gh3GifPackets[1].load(std::memory_order_relaxed)),
+                     static_cast<unsigned long long>(gh3GifPackets[2].load(std::memory_order_relaxed)),
+                     static_cast<unsigned long long>(gh3PrimitiveBatches.load(std::memory_order_relaxed)),
+                     width, height, nonBlack, displayFbp, sourceFbp, unsigned(usedPreferredDisplaySource));
+    }
 
 
     std::fill(s_uploadBuffer.begin(), s_uploadBuffer.end(), 0u);

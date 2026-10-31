@@ -17,6 +17,8 @@
 
 using namespace GSInternal;
 
+extern std::atomic<uint64_t> gh3PrimitiveBatches;
+
 namespace
 {
     float fabsQ(float q)
@@ -548,6 +550,7 @@ void GSCpuBackend::Submit(const GSPrimitiveBatch &batch)
     std::lock_guard<std::mutex> lock(m_mutex);
     if (!m_vram || batch.vertexCount == 0u)
         return;
+    gh3PrimitiveBatches.fetch_add(1, std::memory_order_relaxed);
     DrawPrimitive(batch);
 }
 

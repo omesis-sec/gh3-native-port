@@ -10,6 +10,9 @@
 #include <string>
 #include <vector>
 
+std::atomic<uint64_t> gh3GifPackets[3]{};
+std::atomic<uint64_t> gh3PrimitiveBatches{0};
+
 namespace
 {
     inline void inRange(uint32_t offset, size_t bytes, size_t regionSize, const char *op, uint32_t address)
@@ -1947,6 +1950,10 @@ void PS2Memory::submitGifPacket(GifPathId pathId, const uint8_t *data, uint32_t 
 {
     if (!data || sizeBytes < 16)
         return;
+
+    const auto path = static_cast<unsigned>(pathId);
+    if (path >= 1u && path <= 3u)
+        gh3GifPackets[path - 1u].fetch_add(1, std::memory_order_relaxed);
 
     if (pathId == GifPathId::Path3)
     {

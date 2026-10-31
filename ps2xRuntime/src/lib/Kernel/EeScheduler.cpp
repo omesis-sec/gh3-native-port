@@ -366,6 +366,15 @@ bool EeScheduler::checkpointDue(uint32_t cycles) noexcept
             std::fprintf(stderr, "[GH3 scheduler] pc=%08x ra=%08x sp=%08x cycle=%llu\n",
                          ctx->pc, getRegU32(ctx, 31), getRegU32(ctx, 29),
                          static_cast<unsigned long long>(m_eeCycle));
+        // Sample on the guest thread alongside the PC to correlate boot progress
+        // with graphics traffic without enabling verbose instruction logging.
+        const auto &memory = m_runtime.memory();
+        std::fprintf(stderr, "[GH3 graphics] vsync=%llu dma=%llu gif=%llu gsw=%llu vif=%llu\n",
+                     static_cast<unsigned long long>(m_vsyncTick),
+                     static_cast<unsigned long long>(memory.dmaStartCount()),
+                     static_cast<unsigned long long>(memory.gifCopyCount()),
+                     static_cast<unsigned long long>(memory.gsWriteCount()),
+                     static_cast<unsigned long long>(memory.vifWriteCount()));
     }
     accountCycles(cycles);
 
