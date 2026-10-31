@@ -9,8 +9,8 @@
 <text x="77" y="91" fill="#88a6c5" font-size="13" font-weight="700" letter-spacing="2">GUITAR HERO III  /  PS2 → WINDOWS</text>
 <text x="55" y="142" fill="#96aec8" font-size="13" font-weight="700" letter-spacing="2">ESTIMACIÓN TÉCNICA</text>
 <text x="55" y="187" fill="#43dfb2" font-size="54" font-weight="800" >15%</text>
-<text x="175" y="174" fill="#e6effa" font-size="18" font-weight="600" >hasta una canción completa y jugable</text>
-<text x="175" y="197" fill="#a9bdd5" font-size="14" font-weight="500" >margen de incertidumbre 10–20%</text>
+<text x="240" y="174" fill="#e6effa" font-size="18" font-weight="600" >hasta una canción completa y jugable</text>
+<text x="240" y="197" fill="#a9bdd5" font-size="14" font-weight="500" >margen de incertidumbre 10–20%</text>
 <rect x="55" y="224" width="1090" height="24" rx="12" fill="#25374d"/>
 <rect x="55" y="224" width="163" height="24" rx="12" fill="url(#track)"/>
 <circle cx="218" cy="236" r="10" fill="#e4fff6" stroke="#43dfb2" stroke-width="3"/>
