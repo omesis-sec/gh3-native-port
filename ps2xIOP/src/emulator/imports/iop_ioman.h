@@ -2,7 +2,11 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <vector>
+#include <unordered_map>
+
+namespace ps2x::iop { class IopHost; }
 
 namespace ps2x::iop::detail
 {
@@ -13,7 +17,8 @@ namespace ps2x::iop::detail
     class IopIoman
     {
     public:
-        explicit IopIoman(IopMemory &memory) noexcept;
+        IopIoman(IopMemory &memory, IopHost &host) noexcept;
+        ~IopIoman();
 
         void reset();
         [[nodiscard]] bool dispatchImport(uint16_t ordinal, IopCpuState &cpu, IopGuestExecutor &executor);
@@ -26,7 +31,16 @@ namespace ps2x::iop::detail
             std::string name;
         };
 
+        struct OpenFile { uint64_t handle; uint64_t offset; uint64_t size; uint64_t base = 0u; };
+        struct ArchiveEntry { uint64_t offset; uint32_t size; };
+        bool openGameArchive(std::string_view guestPath, OpenFile &file);
+        bool loadGameArchiveIndex();
         IopMemory &m_memory;
+        IopHost &m_host;
+        std::unordered_map<uint32_t, OpenFile> m_files;
+        std::unordered_map<std::string, ArchiveEntry> m_archiveEntries;
+        bool m_archiveIndexLoaded = false;
+        uint32_t m_nextFd = 3u;
         std::vector<Device> m_devices;
     };
 }

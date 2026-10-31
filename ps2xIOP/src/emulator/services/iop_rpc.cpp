@@ -21,8 +21,55 @@ namespace ps2x::iop::detail
     void IopRpcBridge::reset()
     {
         m_servers.clear();
+        m_commandHandlers.clear();
+        m_pendingCommands.clear();
         m_nextDmaId = 1u;
         m_sifInitialized = false;
+    }
+
+    bool IopRpcBridge::dispatchCommand(uint32_t commandId, const void *packet, size_t size, IopGuestExecutor &executor)
+    {
+        if (!packet || size < 16u || size > 112u)
+            return false;
+        auto handler = m_commandHandlers.find(commandId);
+        if (handler == m_commandHandlers.end() || handler->second.function == 0u)
+        {
+            if (m_pendingCommands.size() >= 32u)
+                return false;
+            const auto *bytes = static_cast<const uint8_t *>(packet);
+            m_pendingCommands.push_back({commandId, std::vector<uint8_t>(bytes, bytes + size)});
+            m_host.log(LogLevel::Info, "[IOP:SIF] queued command until handler registration");
+            return true;
+        }
+        const CommandHandler target = handler->second;
+        const uint32_t address = m_memory.allocate(static_cast<uint32_t>(size), 16u);
+        if (!address)
+            return false;
+        if (!m_memory.writeRam(address, packet, size))
+        {
+            (void)m_memory.freeAllocation(address);
+            return false;
+        }
+        (void)executor.executeGuestFunctionWithBudget(target.function, address, target.argument, 0u, 0u, target.gp, 100000u);
+        (void)m_memory.freeAllocation(address);
+        return true;
+    }
+
+    void IopRpcBridge::servicePendingCommands(IopGuestExecutor &executor)
+    {
+        for (size_t i = 0; i < m_pendingCommands.size();)
+        {
+            auto handler = m_commandHandlers.find(m_pendingCommands[i].commandId);
+            if (handler == m_commandHandlers.end() || handler->second.function == 0u)
+            {
+                ++i;
+                continue;
+            }
+            PendingCommand pending = std::move(m_pendingCommands[i]);
+            m_pendingCommands.erase(m_pendingCommands.begin() + i);
+            m_host.log(LogLevel::Info, "[IOP:SIF] dispatching queued command");
+            (void)dispatchCommand(pending.commandId, pending.packet.data(), pending.packet.size(), executor);
+        }
     }
 
     bool IopRpcBridge::dispatchSifManImport(uint16_t ordinal, IopCpuState &cpu)
@@ -145,12 +192,19 @@ namespace ps2x::iop::detail
         case 7:
         case 8:
         case 9:
-        case 10:
-        case 11:
         case 14: // InitRpc
         case 15:
         case 16:
             setV0(0);
+            return true;
+        case 10: // sceSifAddCmdHandler
+            m_commandHandlers[cpu.gpr[4]] = {cpu.gpr[5], cpu.gpr[6], cpu.gpr[28]};
+            m_host.log(LogLevel::Info, "[IOP:SIF] registered command handler " + std::to_string(cpu.gpr[4]));
+            setV0(0u);
+            return true;
+        case 11: // sceSifRemoveCmdHandler
+            m_commandHandlers.erase(cpu.gpr[4]);
+            setV0(0u);
             return true;
         case 12: // sceSifSendCmd
         case 13: // isceSifSendCmd

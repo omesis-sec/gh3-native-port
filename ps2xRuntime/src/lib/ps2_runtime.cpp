@@ -450,6 +450,7 @@ static void UploadFrame(Texture2D &tex, PS2Runtime *rt, uint32_t &outWidth, uint
     s_lastWidth = width;
     s_lastHeight = height;
 
+
     std::fill(s_uploadBuffer.begin(), s_uploadBuffer.end(), 0u);
     if (!s_scratch.empty() && width != 0u && height != 0u)
     {
@@ -597,6 +598,16 @@ ps2x::iop::RpcResult PS2Runtime::handleIopRpc(uint8_t *rdram, R5900Context *ctx,
     auto scope = m_iopHost->enterCall(ctx, rdram);
     request.callToken = scope.token();
     return m_iopSubsystem->handleRpc(request);
+}
+
+bool PS2Runtime::sendIopSifCommand(uint8_t *rdram, R5900Context *ctx, uint32_t commandId, const void *packet, size_t size)
+{
+    auto scope = m_iopHost->enterCall(ctx, rdram);
+    const bool handled = m_iopSubsystem && m_iopSubsystem->dispatchSifCommand(commandId, packet, size);
+    // Experimental pacing lets the IOP worker service queued file commands.
+    if (handled && commandId == 1u)
+        m_iopSubsystem->runEeCycles(200000u);
+    return handled;
 }
 
 void PS2Runtime::notifyIopSifTransfer(uint8_t *rdram, const ps2x::iop::SifTransfer &transfer)
@@ -1395,7 +1406,6 @@ bool PS2Runtime::dispatchGuestBranch(uint8_t *rdram,
     }
 
     RecompiledFunction targetFn = lookupFunction(targetPc);
-    const uint32_t entryPc = ctx->pc;
     targetFn(rdram, ctx, this);
 
     if (isStopRequested() || ctx->pc == 0u)
@@ -1403,11 +1413,9 @@ bool PS2Runtime::dispatchGuestBranch(uint8_t *rdram,
         return false;
     }
 
-    if (ctx->pc == entryPc)
-    {
-        ctx->pc = fallthroughPc;
-    }
-
+    // The callee can yield at its own entry address, including during
+    // recursive calls to the same guest function. Equality with entryPc is
+    // therefore not evidence of a completed call; preserve the guest PC.
     return ctx->pc == fallthroughPc;
 }
 

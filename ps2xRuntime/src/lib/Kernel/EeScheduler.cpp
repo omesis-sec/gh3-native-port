@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstring>
+#include <cstdio>
 #include <limits>
 #include <stdexcept>
 
@@ -356,6 +357,16 @@ void EeScheduler::postEvent(EeEvent event)
 
 bool EeScheduler::checkpointDue(uint32_t cycles) noexcept
 {
+    // Bounded diagnostic sampling: reveals a stalled guest PC without changing it.
+    static thread_local uint64_t gh3Samples = 0u;
+    if ((++gh3Samples % 1000000u) == 0u)
+    {
+        const R5900Context *ctx = currentContext();
+        if (ctx)
+            std::fprintf(stderr, "[GH3 scheduler] pc=%08x ra=%08x sp=%08x cycle=%llu\n",
+                         ctx->pc, getRegU32(ctx, 31), getRegU32(ctx, 29),
+                         static_cast<unsigned long long>(m_eeCycle));
+    }
     accountCycles(cycles);
 
     if (m_checkpointPending.load(std::memory_order_acquire) ||

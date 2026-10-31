@@ -1,0 +1,26 @@
+# Technical status · 30 October 2026
+
+The supported executable is `SLUS_216.72`, 2,625,152 bytes, SHA-1 `15992cec17deb6bf8e3d8fa4a2a5f1ef1b60f47e`. Only the executable hash was checked, not the full ISO. The analyzer identified 9,459 heuristic functions. A hybrid map combining game function boundaries with startup and library coverage yielded 9,822 translated entries, including 84 stubs and 1,904 indirect-flow warnings. Heuristic function names and boundaries remain provisional.
+
+The native Debug runner opens a Windows window and has loaded the required IOP modules, including FILEIO and MSTREAM. It reads archives and scripts from local disc data. A bounded run passed the earlier invalid heap pointer, loaded over 150 packages, read the 2,617,312-byte `Z_Soundcheck` package, and remained active for 55 seconds. The observed window remained black. There is no verified menu, game input, synchronized sound or playable song.
+
+## Changes made in this fork
+
+- IOP command handlers are registered and early SIF commands are queued instead of silently discarded.
+- IOP file services implement basic read-only open, close, read and seek operations.
+- Freed IOP memory blocks are reused and free-space accounting considers fragmentation. The local allocation test passed 50,000 cycles.
+- Recursive guest dispatch no longer treats a call returning to the same entry PC as already complete.
+- The game's initial heap is limited below the callback stack reservation to avoid overwriting package data. This is applied to generated local code by `reserve_callback_memory.py`.
+- The startup function map keeps the delay slot at `0x00101080` with its preceding `JAL`, and adds observed internal entry points.
+- An early file-open callback guard prevents a completed response from being replaced by a provisional identifier. This is applied to generated local code by `fix_early_open_callback.py`.
+
+The 200,000 EE-cycle SIF timing allowance is a temporary heuristic, not a faithful hardware model. File requests and the repeated opening of `sounds/sfx.wad` need investigation. The black window may involve rendering, scheduling, missing assets or another path; no single cause has been established. A Release build was not completed, so Debug timing does not represent final performance.
+
+## Next investigation
+
+1. Establish a reference boot trace for the same disc in PCSX2, covering the first visible screen and major file requests.
+2. Instrument the native renderer and frame submission to identify why no image appears, while checking whether the main game loop progresses.
+3. Replace provisional IOP timing with request/response synchronization and verify no callback race remains.
+4. Reach a navigable menu before testing audio, guitar controls and a full song.
+
+Local logs and generated C++ are intentionally excluded. The exact developer workflow is in [BUILD.md](BUILD.md); public milestones are in the root [ROADMAP.md](../../ROADMAP.md).

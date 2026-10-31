@@ -333,13 +333,24 @@ namespace ps2x::iop::detail
         std::fill(m_owned.begin() + block->address,
                   m_owned.begin() + block->address + block->size,
                   uint8_t{0});
+        m_heapCursor = std::min(m_heapCursor, block->address);
         m_allocations.erase(block);
         return true;
     }
 
     uint32_t IopMemory::maxFreeMemory() const
     {
-        return m_heapCursor < HeapLimit ? HeapLimit - m_heapCursor : 0u;
+        std::vector<Allocation> blocks = m_allocations;
+        std::sort(blocks.begin(), blocks.end(), [](const Allocation &a, const Allocation &b) { return a.address < b.address; });
+        uint32_t position = HeapBase;
+        uint32_t largest = 0u;
+        for (const Allocation &block : blocks)
+        {
+            if (block.address > position)
+                largest = std::max(largest, block.address - position);
+            position = std::max(position, block.address + block.size);
+        }
+        return std::max(largest, position < HeapLimit ? HeapLimit - position : 0u);
     }
 
     std::optional<IopMemory::Allocation> IopMemory::allocationContaining(uint32_t address) const

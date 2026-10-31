@@ -226,6 +226,13 @@ int main(int argc, char *argv[])
             return 1;
         }
 
+        // Optional raw disc sectors; extracted files remain available via host0.
+        if (const char *discImage = std::getenv("GH3_DISC_IMAGE"))
+        {
+            auto paths = PS2Runtime::getIoPaths();
+            paths.cdImage = std::filesystem::path(discImage);
+            PS2Runtime::setIoPaths(paths);
+        }
         runtime.run();
 
 #ifdef _DEBUG

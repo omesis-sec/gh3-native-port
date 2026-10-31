@@ -1,4 +1,12 @@
 /bin/
+/gh3-port/local/
+/gh3-port/reference/
+/gh3-port/build/
+/gh3-port/**/__pycache__/
+*.pyc
+*.iso
+*.elf
+SLUS_216.72
 /intermediate/
 .vs/
 out

@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <unordered_map>
+#include <vector>
 
 namespace ps2x::iop
 {
@@ -50,6 +51,8 @@ namespace ps2x::iop::detail
         [[nodiscard]] bool dispatchSifCmdImport(uint16_t ordinal, IopCpuState &cpu);
         [[nodiscard]] RpcResult handleRpc(const RpcRequest &request, IopGuestExecutor &executor);
         void onSifTransfer(const SifTransfer &transfer);
+        [[nodiscard]] bool dispatchCommand(uint32_t commandId, const void *packet, size_t size, IopGuestExecutor &executor);
+        void servicePendingCommands(IopGuestExecutor &executor);
         void removeServersInRange(uint32_t base, uint32_t size);
 
         [[nodiscard]] bool hasServer(uint32_t sid) const noexcept;
@@ -71,6 +74,10 @@ namespace ps2x::iop::detail
         IopHost &m_host;
         IopMemory &m_memory;
         IopKernel &m_kernel;
+        struct CommandHandler { uint32_t function; uint32_t argument; uint32_t gp; };
+        struct PendingCommand { uint32_t commandId; std::vector<uint8_t> packet; };
+        std::vector<PendingCommand> m_pendingCommands;
+        std::unordered_map<uint32_t, CommandHandler> m_commandHandlers;
         std::unordered_map<uint32_t, RpcServer> m_servers;
         uint32_t m_nextDmaId = 1u;
         bool m_sifInitialized = false;

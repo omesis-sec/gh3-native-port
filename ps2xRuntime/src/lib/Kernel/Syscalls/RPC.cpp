@@ -970,33 +970,39 @@ namespace ps2_syscalls
 
     void sceSifSendCmd(uint8_t *rdram, R5900Context *ctx, PS2Runtime *runtime)
     {
-        uint32_t cid = getRegU32(ctx, 4);
-        uint32_t packetAddr = getRegU32(ctx, 5);
-        uint32_t packetSize = getRegU32(ctx, 6);
-        uint32_t srcExtra = getRegU32(ctx, 7);
-
-        uint32_t sp = getRegU32(ctx, 29);
-        uint32_t destExtra = 0;
-        uint32_t sizeExtra = 0;
-        readStackU32(rdram, sp, 0x10, destExtra);
-        readStackU32(rdram, sp, 0x14, sizeExtra);
-
-        if (sizeExtra > 0 && srcExtra && destExtra)
+        const uint32_t cid = getRegU32(ctx, 4);
+        const uint32_t packetAddr = getRegU32(ctx, 5);
+        const uint32_t packetSize = getRegU32(ctx, 6);
+        const uint32_t srcExtra = getRegU32(ctx, 7);
+        // The EE n32 calling convention passes arguments five and six in t0/t1.
+        const uint32_t destExtra = getRegU32(ctx, 8);
+        const uint32_t sizeExtra = getRegU32(ctx, 9);
+        std::vector<uint8_t> packet;
+        if (!runtime || packetSize < 16u || packetSize > 112u ||
+            !copyGuestBytesBounded(rdram, packetAddr, packetSize, 112u, packet))
         {
-            rpcCopyToRdram(rdram, destExtra, srcExtra, sizeExtra);
+            setReturnS32(ctx, 0);
+            return;
         }
-
-        static int logCount = 0;
-        if (logCount < 5)
+        if (sizeExtra > 0u)
         {
-            RUNTIME_LOG("[sceSifSendCmd] cid=0x" << std::hex << cid
-                                                 << " packet=0x" << packetAddr
-                                                 << " psize=0x" << packetSize
-                                                 << " extra=0x" << destExtra << std::dec << std::endl);
-            ++logCount;
+            std::vector<uint8_t> extra;
+            constexpr uint32_t maxExtra = 2u * 1024u * 1024u;
+            if (!srcExtra || !destExtra ||
+                !copyGuestBytesBounded(rdram, srcExtra, sizeExtra, maxExtra, extra) ||
+                !runtime->writeIopMemory(destExtra, extra.data(), extra.size()))
+            {
+                setReturnS32(ctx, 0);
+                return;
+            }
         }
-
-        // Return non-zero on success.
+        const uint32_t sizeWord = packetSize | (sizeExtra << 8u);
+        std::memcpy(packet.data(), &sizeWord, sizeof(sizeWord));
+        std::memcpy(packet.data() + 4u, &destExtra, sizeof(destExtra));
+        std::memcpy(packet.data() + 8u, &cid, sizeof(cid));
+        const bool handled = runtime->sendIopSifCommand(rdram, ctx, cid, packet.data(), packet.size());
+        if (!handled)
+            std::cerr << "[GH3 SIF] no IOP handler for command 0x" << std::hex << cid << std::dec << std::endl;
         setReturnS32(ctx, 1);
     }
 

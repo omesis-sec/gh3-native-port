@@ -105,7 +105,7 @@ namespace ps2x::iop::detail
               heaplib(memory),
               intrman(memory),
               timrman(),
-              ioman(memory),
+              ioman(memory, host),
               cpuCore(memory),
               imports(memory),
               loadcore(memory, imports)
@@ -745,7 +745,11 @@ namespace ps2x::iop::detail
         const uint64_t iopCycles = total / 8u;
         m_impl->eeCycleCarry = total % 8u;
         if (iopCycles)
+        {
             m_impl->runCycles(iopCycles);
+            try { m_impl->rpc.servicePendingCommands(*m_impl); }
+            catch (...) { /* A diagnostic command must not terminate the host scheduler. */ }
+        }
     }
 
     RpcResult IopEmulator::handleRpc(const RpcRequest &request)
@@ -756,6 +760,11 @@ namespace ps2x::iop::detail
     bool IopEmulator::hasRpcServer(uint32_t sid) const noexcept
     {
         return m_impl->rpc.hasServer(sid);
+    }
+
+    bool IopEmulator::dispatchSifCommand(uint32_t commandId, const void *packet, size_t size)
+    {
+        return m_impl->rpc.dispatchCommand(commandId, packet, size, *m_impl);
     }
 
     void IopEmulator::onSifTransfer(const SifTransfer &transfer)
