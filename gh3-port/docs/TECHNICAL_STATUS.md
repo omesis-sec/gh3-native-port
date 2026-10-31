@@ -22,10 +22,12 @@ A 55-second Debug run collected GIF packet, CPU primitive and presentation count
 
 The earlier invalid free was traced to the game's heap overlapping runtime callback stacks. Reserving the top MiB prevented the previously observed package terminator corruption; the bounded run passed both global archives and reached `Z_Soundcheck` without the former missing indirect-call target. The reserved region still needs a complete memory-layout audit.
 
+An optional bounded IOP file trace (`GH3_TRACE_IOP_FILE=sfx.wad`) recorded 28 opens and 28 closes, 63 reads and 64 seeks on the matching file during a 55-second Debug run. The observed reads advanced through the file. These observations do not prove reference behavior, but the repeated opens alone are not evidence of an infinite open loop. The trace logs at most 512 events per IOP reset and is disabled when the filter is unset.
+
 ## Next investigation
 
 1. Establish a reference boot trace for the same disc in PCSX2, covering the first visible screen and major file requests.
-2. Trace the startup scripts and outstanding file and audio operations alongside graphics submissions, then compare them with the reference. Investigate repeated `sounds/sfx.wad` opens without assuming they cause the stalled graphics.
+2. Trace startup scripts and outstanding file and audio operations alongside graphics submissions, then compare them with the reference.
 3. Replace provisional IOP timing with request/response synchronization and verify no callback race remains.
 4. Reach a navigable menu before testing audio, guitar controls and a full song.
 

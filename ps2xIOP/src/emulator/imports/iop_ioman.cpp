@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstring>
+#include <cstdlib>
 #include <limits>
 #include <vector>
 
@@ -26,6 +27,7 @@ namespace ps2x::iop::detail
             m_host.closeHostFile(file.handle);
         m_files.clear();
         m_nextFd = 3u;
+        m_traceCount = 0u;
         m_archiveEntries.clear();
         m_archiveIndexLoaded = false;
         m_devices.clear();
@@ -106,6 +108,14 @@ namespace ps2x::iop::detail
     {
         constexpr size_t kMaxDevices = 16u;
         const uint32_t a0 = cpu.gpr[4];
+        const auto trace = [&](const std::string &message)
+        {
+            if (m_traceCount < 512u)
+            {
+                ++m_traceCount;
+                m_host.log(LogLevel::Info, "[GH3 IOP trace] " + message + " ra=" + std::to_string(cpu.gpr[31]));
+            }
+        };
         const auto setV0 = [&](uint32_t value)
         {
             cpu.gpr[2] = value;
@@ -139,6 +149,10 @@ namespace ps2x::iop::detail
                 }
             }
             const uint32_t fd = m_nextFd++;
+            const char *filter = std::getenv("GH3_TRACE_IOP_FILE");
+            file.trace = filter && *filter && guest.find(filter) != std::string::npos;
+            if (file.trace)
+                trace("open fd=" + std::to_string(fd));
             m_files.emplace(fd, file);
             m_host.log(LogLevel::Info, "[IOP:ioman] open: " + guest + " fd=" + std::to_string(fd) + " size=" + std::to_string(file.size));
             setV0(fd);
@@ -148,6 +162,7 @@ namespace ps2x::iop::detail
         {
             auto it = m_files.find(a0);
             if (it == m_files.end()) { setV0(0xFFFFFFFFu); return true; }
+            if (it->second.trace) trace("close fd=" + std::to_string(a0));
             m_host.closeHostFile(it->second.handle);
             m_files.erase(it);
             setV0(0u);
@@ -167,6 +182,8 @@ namespace ps2x::iop::detail
                 (read && !m_memory.writeRam(address, bytes.data(), read)))
             { setV0(0xFFFFFFFFu); return true; }
             it->second.offset += read;
+            if (it->second.trace)
+                trace("read fd=" + std::to_string(a0) + " bytes=" + std::to_string(read) + " requested=" + std::to_string(size) + " end=" + std::to_string(it->second.offset));
             setV0(static_cast<uint32_t>(read));
             return true;
         }
@@ -182,6 +199,8 @@ namespace ps2x::iop::detail
             const int64_t position = base + offset;
             if (position < 0 || position > INT32_MAX) { setV0(0xFFFFFFFFu); return true; }
             it->second.offset = static_cast<uint64_t>(position);
+            if (it->second.trace)
+                trace("seek fd=" + std::to_string(a0) + " whence=" + std::to_string(whence) + " position=" + std::to_string(position));
             setV0(static_cast<uint32_t>(position));
             return true;
         }

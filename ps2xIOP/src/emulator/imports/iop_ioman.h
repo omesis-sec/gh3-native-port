@@ -31,7 +31,7 @@ namespace ps2x::iop::detail
             std::string name;
         };
 
-        struct OpenFile { uint64_t handle; uint64_t offset; uint64_t size; uint64_t base = 0u; };
+        struct OpenFile { uint64_t handle; uint64_t offset; uint64_t size; uint64_t base = 0u; bool trace = false; };
         struct ArchiveEntry { uint64_t offset; uint32_t size; };
         bool openGameArchive(std::string_view guestPath, OpenFile &file);
         bool loadGameArchiveIndex();
@@ -41,6 +41,7 @@ namespace ps2x::iop::detail
         std::unordered_map<std::string, ArchiveEntry> m_archiveEntries;
         bool m_archiveIndexLoaded = false;
         uint32_t m_nextFd = 3u;
+        uint32_t m_traceCount = 0u;
         std::vector<Device> m_devices;
     };
 }
